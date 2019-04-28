@@ -1,0 +1,51 @@
+---
+title: "hw6.Rmd"
+author: "Seydou Yacouba"
+date: "April 23, 2019"
+output: html_document
+---
+
+# read_data
+dogs <- read_excel("data/best_in_show.xlsx",
+                   sheet = "Best in show full sheet",
+                   skip = 2)
+
+##data cleaning
+dogs %<>%
+  select(c(1,3,5,14,30,32,41)) %>%
+  slice(2:n())
+  
+names(dogs) <- c("sources","category","score","longevity","popularity",
+                   "size","intelligence_class")
+
+dogs <- dogs %>%
+  mutate(size_category = factor(size,
+                              levels=c("small","medium","large")),
+         intelligence_class = factor(intelligence_class,
+                             levels=c("Lowest","Fair","Average","Above Average",
+                                      "Excellent","Brightest")),
+         category = as.factor(category),
+         popularity = parse_number(popularity))
+
+clever <- c("Brightest","Above Average","Excellent")
+
+dogs <- dogs %>%
+    mutate(intelligence = ifelse(intelligence_class %in% clever,
+                                       "clever","dumb"))
+dogs$intelligence <- factor(dogs$intelligence, levels = c("dumb","clever"))
+#graph
+dogs %>%
+  ggplot(aes(x = score, y = popularity, label = sources)) + 
+  geom_text(aes(color = category), check_overlap = TRUE,
+              fontface = "bold",vjust = 0, nudge_y = 0.5) +
+  geom_point(aes(shape = size, size = intelligence)) +
+  geom_vline(xintercept = 2.4) + #not sure what critatria was used to draw the line
+  geom_hline(yintercept = 72)+ #not sure what critatria was used to draw the line
+  annotate("text", x=c(3.5,1.1,1.1,3.5), y=c(20,20,140,140),
+           label= c("Hot Dogs!","Inexplicably Overrated",
+                    "The Rightly Ignored","Overlooked Tresures"),size = 6) +
+  labs(title = "Best in Show: The Ultimate Data Dog",
+       x = "Score",
+       y = "Popularity") + 
+  theme_wsj() + 
+  scale_y_reverse()
